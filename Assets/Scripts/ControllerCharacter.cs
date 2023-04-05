@@ -5,6 +5,7 @@ using UnityEngine;
 [RequireComponent(typeof(CharacterController))]
 public class ControllerCharacter : MonoBehaviour
 {
+	
 	[SerializeField] float speed;
 	[SerializeField] float turnRate;
 	[SerializeField] float jumpHeight;
@@ -45,7 +46,7 @@ public class ControllerCharacter : MonoBehaviour
 			if (Input.GetButtonDown("Jump"))
 			{
 				velocity.y += Mathf.Sqrt(jumpHeight * -2 * Physics.gravity.y);
-				StartCoroutine(DoubleJump(doubleJumpHeight));
+				StartCoroutine(DoubleJump());
 			}
 		}
 		velocity.y += Physics.gravity.y * Time.deltaTime;
@@ -101,7 +102,7 @@ public class ControllerCharacter : MonoBehaviour
 		body.velocity = pushDir * hitForce;
 	}
 
-	IEnumerator DoubleJump (float timer)
+	IEnumerator DoubleJump ()
 	{
 		// Wait a little afterhte jump to allow adouble jump
 		yield return new WaitForSeconds(0.1f);
