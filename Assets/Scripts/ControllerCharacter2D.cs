@@ -5,30 +5,33 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class ControllerCharacter2D : MonoBehaviour
 {
-	
+	[SerializeField] Animator animator;
+	[SerializeField] SpriteRenderer spriteRenderer;
 	[SerializeField] float speed;
-	[SerializeField] float turnRate;
 	[SerializeField] float jumpHeight;
 	[SerializeField] float doubleJumpHeight;
-	[SerializeField] float hitForce;
 	[SerializeField, Range(1,5)] float fallRateMultiplier;
 	[SerializeField, Range(1,5)] float lowJumpRateMultiplier;
 	[Header("Ground")]
 	[SerializeField] Transform groundTransform;
 	[SerializeField] LayerMask groundLayerMask;
+	[SerializeField] float groundRadius;
 
 	Rigidbody2D rb;
 	Vector2 velocity = Vector2.zero;
+	
+	bool faceRight = true;
 
 	void Start()
 	{
 		rb = GetComponent<Rigidbody2D>();
+		//spriteRenderer = GetComponent<SpriteRenderer>();
 	}
 
 	void Update()
 	{
 		// Check if the character is on the ground
-		bool onGround = Physics.CheckSphere(groundTransform.position, 0.2f, groundLayerMask) != null;
+		bool onGround = Physics2D.OverlapCircle(groundTransform.position, groundRadius, groundLayerMask) != null;
 
 		// get direction input
 		Vector2 direction = Vector2.zero;
@@ -47,6 +50,7 @@ public class ControllerCharacter2D : MonoBehaviour
 			{
 				velocity.y += Mathf.Sqrt(jumpHeight * -2 * Physics.gravity.y);
 				StartCoroutine(DoubleJump());
+				animator.SetTrigger("Jump");
 			}
 		}
 		velocity.y += Physics.gravity.y * Time.deltaTime;
@@ -63,17 +67,16 @@ public class ControllerCharacter2D : MonoBehaviour
 
         // Move character
         //rb.Move(velocity * Time.deltaTime);
+		rb.velocity= velocity;
 
-		// Rotate character
-		Vector2 face = new Vector2(velocity.x, 0);
-		if (face.magnitude > 0)
-		{
-			transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(face), Time.deltaTime * turnRate);
-		}
+		// Flip character to face direction of movement (velocity
+		if (velocity.x > 0 && !faceRight) Flip();
+		if (velocity.x < 0 && faceRight) Flip();
 
-		// move character
-		//rb.MovePosition(velocity * Time.deltaTime);
-		rb.velocity = velocity;
+		// Update animator
+		animator.SetFloat("Speed", Mathf.Abs(velocity.x));
+		animator.SetBool("Fall", !onGround && velocity.y < -0.1f);
+		
 	}
 
 	IEnumerator DoubleJump ()
@@ -86,7 +89,7 @@ public class ControllerCharacter2D : MonoBehaviour
 			// If "jump" preseed add the velocity
 			if (Input.GetButtonDown("Jump"))
 			{
-				velocity.y += Mathf.Sqrt(doubleJumpHeight * -2 * Physics.clothGravity.y);
+				velocity.y += Mathf.Sqrt(doubleJumpHeight * -2 * Physics.gravity.y);
 				
 				break;
 
@@ -94,4 +97,16 @@ public class ControllerCharacter2D : MonoBehaviour
 			yield return null;
 		}
 	}
+
+	private void Flip()
+	{
+		faceRight = !faceRight;
+		spriteRenderer.flipX = !faceRight;
+	}
+
+    private void OnDrawGizmos()
+    {
+		Gizmos.color = Color.red;
+		Gizmos.DrawSphere(groundTransform.position, groundRadius);
+    }
 }
